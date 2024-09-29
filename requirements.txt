@@ -1,2 +1,5 @@
 numpy==2.1.1
 opencv-python==4.10.0.84
+pynput==1.7.7
+six==1.16.0
+tk==0.1.0

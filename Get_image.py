@@ -24,6 +24,20 @@ def show():
         return 2
     return 0
 
+    
+
+
+def get_screenshot():
+    ret, frame = cap.read()
+
+    if not ret:
+        print("Error: Frame could not be captured.")
+        end_showing()
+        return False, 0
+    
+    return True, frame
+
+
 def end_showing():
     cap.release()
     cv2.destroyAllWindows()
