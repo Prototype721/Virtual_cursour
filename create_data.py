@@ -104,7 +104,7 @@ class ScreenCapture:
             return True
         
         except Exception as e:
-            logging.error(f'Failure in take_screenshot function - {e}', exc_info=True)
+            logging.warning(f'Failure in take_screenshot function - {e}', exc_info=True)
             return True
 
 
