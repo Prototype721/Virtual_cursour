@@ -13,7 +13,7 @@ def show():
     if not ret:
         print("Error: Frame could not be captured.")
         end_showing()
-        return 1
+        return False
 
     # Display the resulting frame
     cv2.imshow('Camera Feed', frame)
@@ -21,8 +21,22 @@ def show():
     # Press 'q' on the keyboard to exit
     if cv2.waitKey(1) & 0xFF == ord('q'):
         end_showing()
-        return 2
-    return 0
+        return False
+    return True
+
+    
+
+
+def get_screenshot():
+    ret, frame = cap.read()
+
+    if not ret:
+        print("Error: Frame could not be captured.")
+        end_showing()
+        return False, 0
+    
+    return True, frame
+
 
 def end_showing():
     cap.release()
