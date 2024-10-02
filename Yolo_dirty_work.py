@@ -5,7 +5,7 @@ import math
 
 
 # Load the YOLO model
-model = YOLO('Models/yolov8s.pt')
+model = YOLO('Models/Custom_yolov8_3.pt')
 
 
 cap = cv2.VideoCapture(0)
