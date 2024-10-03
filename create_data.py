@@ -1,10 +1,11 @@
-import logging
+import Filter_image
 import Get_image
 from pynput import keyboard
 import cv2
 import numpy as np
 import tkinter as tk
 import random
+import logging
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, 
@@ -12,7 +13,7 @@ logging.basicConfig(level=logging.DEBUG,
                     datefmt='%Y-%m-%d %H:%M:%S')
 
 # data in 0_data.txt:
-#  id, [ (% for x), (% for y), (pixels from x), (pixels from y), max_x, max_y ]
+#  id, [ (% for x), (% for y), (pixels from x), (pixels from y), max_x, max_y , [distanse from center of 1 strip, x1, y1, x2, y2], [distanse from center of 2 strip, x1, y1, x2, y2]]
 # p - take screenshot, q - quit
 
 
@@ -51,17 +52,27 @@ class ScreenCapture:
 
     def upload_data(self, number, image, extra_data='#####'):
         try:
+            status, image_strip, coordinates = Filter_image.filter_image(image)
+
+            if not status:
+                logging.warning('Error in stripping image')
+                return False
+            
+
             extra_data = [
                 self.current_x_coordinate,
                 self.current_y_coordinate,
                 self.width * self.current_x_coordinate // 100,
                 self.height * self.current_y_coordinate // 100,
                 self.width,
-                self.height
+                self.height,
+                coordinates[0],
+                coordinates[1]
             ]
 
             logging.info(f"Screenshot {number + 1}: {extra_data}")
             cv2.imwrite(f'Eyes_data/{number + 1}.jpg', image)
+            cv2.imwrite(f'Eyes_data/{number + 1}_strip.jpg', image_strip)
 
             with open('Eyes_data/0_data.txt', 'a') as file:
                 if number != 0:

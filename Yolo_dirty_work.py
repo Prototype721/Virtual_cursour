@@ -21,7 +21,6 @@ while True:
 
 
     results = model(img, stream = True)
-    detections = np.empty((0, 5))
 
     for r in results:
         boxes = r.boxes
