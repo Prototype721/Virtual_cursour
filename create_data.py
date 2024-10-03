@@ -6,6 +6,9 @@ import numpy as np
 import tkinter as tk
 import random
 import logging
+import time
+
+
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, 
@@ -13,18 +16,22 @@ logging.basicConfig(level=logging.DEBUG,
                     datefmt='%Y-%m-%d %H:%M:%S')
 
 # data in 0_data.txt:
-#  id, [ (% for x), (% for y), (pixels from x), (pixels from y), max_x, max_y , [distanse from center of 1 strip, x1, y1, x2, y2], [distanse from center of 2 strip, x1, y1, x2, y2]]
+#  id, [ (% for x), (% for y), (pixels from x), (pixels from y), max_x, max_y , [distanse from center of strip, dist_from_centre_x, dist_from_centre_y, x1, y1, x2, y2], [same as previous 2nd]]
 # p - take screenshot, q - quit
+
+
+SCREEN_CHANGE_TIMER = 0.5
 
 
 class ScreenCapture:
 
+    
 
     def __init__(self):
         self.current_x_coordinate = random.randint(5, 95)
         self.current_y_coordinate = random.randint(5, 95)
         self.width, self.height = self.get_screen_size()
-
+        self._time_to_change_screen_color = 0
 
     def extract_last_screenshot_id(self, file_path='Eyes_data/0_data.txt'):
         try:
@@ -49,13 +56,14 @@ class ScreenCapture:
             logging.error(f"Произошла ошибка: {e}")
             return False, 0
 
-
+    
     def upload_data(self, number, image, extra_data='#####'):
         try:
             status, image_strip, coordinates = Filter_image.filter_image(image)
 
             if not status:
                 logging.warning('Error in stripping image')
+                self._time_to_change_screen_color = time.time()
                 return False
             
 
@@ -96,7 +104,11 @@ class ScreenCapture:
                     logging.info("Exiting due to 'q' key press.")
                     return False  # Stop listener
 
-                if key.char == 'p':
+                if key.char == 'p' or key.char == 'з':
+                    if (time.time() - self._time_to_change_screen_color) < SCREEN_CHANGE_TIMER:   # не обрабатываем "p" клавишу при ошибке обнаружения 2 глаз
+                        logging.warning('Too fast clicking p, please wait')
+                        return True
+                    
                     status, frame = Get_image.get_screenshot()
 
                     if not status:
@@ -111,16 +123,21 @@ class ScreenCapture:
                     status = self.upload_data(last_id, frame)
                     if not status:
                         logging.warning('Ошибка при загрузке данных')
-
+            else:
+                logging.info('Нажата необрабатываемая клавиша')
             return True
-        
+
         except Exception as e:
             logging.warning(f'Failure in take_screenshot function - {e}', exc_info=True)
             return True
 
 
     def open_screen(self):
-        white_image = np.ones((self.height, self.width, 3), dtype=np.uint8) * 255
+        if (time.time() - self._time_to_change_screen_color) < SCREEN_CHANGE_TIMER:   # Если не смогли обнаружить 2 глаза, то меняем цвет фона
+            white_image = np.ones((self.height, self.width, 3), dtype=np.uint8) * 150
+        else:
+            white_image = np.ones((self.height, self.width, 3), dtype=np.uint8) * 255
+        
 
         circle_size = (self.width + self.height) // 200
 
