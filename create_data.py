@@ -7,7 +7,7 @@ import tkinter as tk
 import random
 import logging
 import time
-
+import os
 
 
 # Configure logging
@@ -82,6 +82,10 @@ class ScreenCapture:
             cv2.imwrite(f'Eyes_data/{number + 1}.jpg', image)
             cv2.imwrite(f'Eyes_data/{number + 1}_strip.jpg', image_strip)
 
+            if not os.path.exists('Eyes_data'):
+                logging.info("Directory Eyes_data not found and will be created")
+                os.makedirs('Eyes_data')
+
             with open('Eyes_data/0_data.txt', 'a') as file:
                 if number != 0:
                     file.write('\n')
@@ -96,15 +100,15 @@ class ScreenCapture:
             logging.error('Error in upload data function', exc_info=True)
             return False
 
-
     def when_key_pressed(self, key):
         try:
             if hasattr(key, 'char'):
-                if key.char == 'q':
+                
+                if key.char == 'q' or key.char == 'й':
                     logging.info("Exiting due to 'q' key press.")
                     return False  # Stop listener
 
-                if key.char == 'p' or key.char == 'з':
+                if key.char == 'p':
                     if (time.time() - self._time_to_change_screen_color) < SCREEN_CHANGE_TIMER:   # не обрабатываем "p" клавишу при ошибке обнаружения 2 глаз
                         logging.warning('Too fast clicking p, please wait')
                         return True
@@ -159,7 +163,6 @@ class ScreenCapture:
                               cv2.WINDOW_FULLSCREEN)
         
         cv2.imshow('Teaching model screen', white_image)
-
         if cv2.waitKey(1) & 0xFF == ord('q'):
             cv2.destroyAllWindows()
             logging.info('Quitting from open_screen function.')
