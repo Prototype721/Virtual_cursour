@@ -1,10 +1,10 @@
 import Filter_image
 import Work_with_cv2
+import Create_full_screen
 from pynput import keyboard
 import cv2
 import numpy as np
 import tkinter as tk
-import random
 import logging
 import time
 import os
@@ -22,15 +22,14 @@ logging.basicConfig(level=logging.DEBUG,
 SCREEN_CHANGE_TIMER = 0.5
 
 
+
 class ScreenCapture:
 
     
-
     def __init__(self):
-        self.current_x_coordinate = random.randint(5, 95)
-        self.current_y_coordinate = random.randint(5, 95)
+        self.current_x_coordinate = 50
+        self.current_y_coordinate = 50
         self.width, self.height = self.get_screen_size()
-        self._time_to_change_screen_color = 0
 
     def extract_last_screenshot_id(self, file_path='Eyes_data/0_data.txt'):
         try:
@@ -56,13 +55,16 @@ class ScreenCapture:
             return False, 0
 
     
-    def upload_data(self, number, image, extra_data='#####'):
+    def upload_data(self, number, image, cls):
         try:
-            status, image_strip, coordinates = Filter_image.filter_image(image)
+            status, image_strip, coordinates = Filter_image.filter_image(image)  # TODO 2
 
             if not status:
                 logging.warning('Error in stripping image')
-                self._time_to_change_screen_color = time.time()
+                try:
+                    cls.set_grey_screen()
+                except Exception as e:
+                    logging.exception("Can't color grey screen in upload_data - class not found")
                 return False
             
 
@@ -90,30 +92,38 @@ class ScreenCapture:
                     file.write('\n')
                 file.write(f'{str(number + 1)} {str(extra_data)}')
 
-            self.current_x_coordinate = random.randint(5, 95)
-            self.current_y_coordinate = random.randint(5, 95)
-
             return True
         
         except Exception as e:
             logging.error('Error in upload data function', exc_info=True)
             return False
 
-    def when_key_pressed(self, key):
+
+    def change_circle_coordinates(self):
+        (status,
+        self.current_x_coordinate, 
+        self.current_y_coordinate) = White_screen.update_circle_coordinates()
+
+        if not status:
+            logging.warning("Can't change coordenates for circle in \
+             change_circle_coordinates")
+            return False
+        return True
+
+    def when_key_pressed(self, key, Cls_show, Cls):
         try:
             if hasattr(key, 'char'):
                 
-                if key.char == 'q' or key.char == 'й':
+                if key.char == 'q':
                     logging.info("Exiting due to 'q' key press.")
                     exit_func()
                     return False  # Stop listener
 
                 if key.char == 'p':
-                    if (time.time() - self._time_to_change_screen_color) < SCREEN_CHANGE_TIMER:   # не обрабатываем "p" клавишу при ошибке обнаружения 2 глаз
-                        logging.warning('Too fast clicking p, please wait')
+                    if Cls.get_is_waiting_gray():
+                        logging.info("Too fast please wait")
                         return True
-                    
-                    status, frame = Image_show.get_screenshot()
+                    status, frame = Cls_show.get_screenshot()
 
                     if not status:
                         logging.error('Error in Work_with_cv2.get_screenshot')
@@ -124,9 +134,14 @@ class ScreenCapture:
                         logging.warning('Ошибка при извлечении последнего ID скриншота')
                         return True
 
-                    status = self.upload_data(last_id, frame)
+                    status = self.upload_data(last_id, frame, Cls)
                     if not status:
                         logging.warning('Ошибка при загрузке данных')
+                        return True
+                    status = self.change_circle_coordinates()
+                    if not status:
+                        logging.warning('Ошибка при создании новых координат')
+                        
             else:
                 logging.info('Нажата необрабатываемая клавиша')
             return True
@@ -134,45 +149,6 @@ class ScreenCapture:
         except Exception as e:
             logging.warning(f'Failure in take_screenshot function - {e}', exc_info=True)
             return True
-
-
-    def open_screen(self):
-        
-        if (time.time() - self._time_to_change_screen_color) < SCREEN_CHANGE_TIMER:   # Если не смогли обнаружить 2 глаза, то меняем цвет фона
-            white_image = np.ones((self.height, self.width, 3), dtype=np.uint8) * 150
-        else:
-            white_image = np.ones((self.height, self.width, 3), dtype=np.uint8) * 255
-        
-
-        circle_size = (self.width + self.height) // 200
-
-        top_left_x = (self.width * self.current_x_coordinate) // 100
-        top_left_y = (self.height * self.current_y_coordinate) // 100
-
-        cv2.putText(white_image, 'p - screenshot, q - quit',
-                    (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
-
-        cv2.circle(white_image,
-                   (top_left_x, top_left_y),
-                    circle_size, (0, 0, 255), -1)
-
-        cv2.namedWindow('Teaching model screen',
-                         cv2.WND_PROP_FULLSCREEN)
-        
-        cv2.setWindowProperty('Teaching model screen',
-                              cv2.WND_PROP_FULLSCREEN,
-                              cv2.WINDOW_FULLSCREEN)
-        
-        cv2.imshow('Teaching model screen', white_image)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            
-            cv2.destroyAllWindows()
-            logging.info('Quitting from open_screen function.')
-            exit_func()
-            return False
-        
-        return True
 
 
     def get_screen_size(self):
@@ -183,7 +159,6 @@ class ScreenCapture:
         screen_height = root.winfo_screenheight()
 
         root.destroy()
-        logging.info(f'Screen size: {screen_width}x{screen_height}')
         return screen_width, screen_height
 
 
@@ -198,16 +173,21 @@ def exit_func():
 
 if __name__ == '__main__':
     screen_capture = ScreenCapture()
+    width, height = screen_capture.get_screen_size()
+    logging.info(f'Screen size: {width}x{height}')
+
     Image_show = Work_with_cv2.Image()
-    
+    White_screen = Create_full_screen.Full_screen_image(width, height)
+
     listener = keyboard.Listener(on_press=lambda key:
-                                 screen_capture.when_key_pressed(key))
+                                 screen_capture.when_key_pressed(key, Image_show, White_screen))
     listener.start()
 
     while True:
         if Exit_flag:
             listener.stop()
             Image_show.end_showing()
+            White_screen.end_showing()
             cv2.destroyAllWindows()
             break
 
@@ -215,6 +195,6 @@ if __name__ == '__main__':
         if not status:
             break
 
-        status = screen_capture.open_screen()
+        status = White_screen.open_screen()
         if not status:
             break

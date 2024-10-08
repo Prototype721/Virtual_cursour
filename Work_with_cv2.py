@@ -2,7 +2,6 @@ import cv2
 import logging
 
 
-
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, 
                     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -41,12 +40,14 @@ class Image:
 
     def show(self):
         status, self._frame = self.update()
-        if status:
-            cv2.imshow('Camera Feed', self._frame)
-            return True
-        return False
-    # Press 'q' on the keyboard to exit
-#    if cv2.waitKey(1) & 0xFF == ord('q'):
+        if not status:
+            logging.warning("Can't show frame in show() because of update()")
+            return False
+        cv2.imshow('Camera Feed', self._frame)
+        return True
+        
+
+
     def get_screenshot(self):
         status, self._frame = self.update()
         if not status:
