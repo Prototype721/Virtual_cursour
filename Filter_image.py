@@ -20,7 +20,7 @@ def filter_image(img):
     size_of_y = len(img)
     objects = []
 
-    results = model(img) 
+    results = model(img, stream = True, verbose = False) 
 
     for r in results:
         boxes = r.boxes

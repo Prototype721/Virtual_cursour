@@ -1,5 +1,5 @@
 import Filter_image
-import Get_image
+import Work_with_cv2
 from pynput import keyboard
 import cv2
 import numpy as np
@@ -18,7 +18,6 @@ logging.basicConfig(level=logging.DEBUG,
 # data in 0_data.txt:
 #  id, [ (% for x), (% for y), (pixels from x), (pixels from y), max_x, max_y , [distanse from center of strip, dist_from_centre_x, dist_from_centre_y, x1, y1, x2, y2], [same as previous 2nd]]
 # p - take screenshot, q - quit
-
 
 SCREEN_CHANGE_TIMER = 0.5
 
@@ -106,6 +105,7 @@ class ScreenCapture:
                 
                 if key.char == 'q' or key.char == 'й':
                     logging.info("Exiting due to 'q' key press.")
+                    exit_func()
                     return False  # Stop listener
 
                 if key.char == 'p':
@@ -113,10 +113,10 @@ class ScreenCapture:
                         logging.warning('Too fast clicking p, please wait')
                         return True
                     
-                    status, frame = Get_image.get_screenshot()
+                    status, frame = Image_show.get_screenshot()
 
                     if not status:
-                        logging.error('Error in Get_image.get_screenshot')
+                        logging.error('Error in Work_with_cv2.get_screenshot')
                         return True
                     
                     status, last_id = self.extract_last_screenshot_id()
@@ -137,6 +137,7 @@ class ScreenCapture:
 
 
     def open_screen(self):
+        
         if (time.time() - self._time_to_change_screen_color) < SCREEN_CHANGE_TIMER:   # Если не смогли обнаружить 2 глаза, то меняем цвет фона
             white_image = np.ones((self.height, self.width, 3), dtype=np.uint8) * 150
         else:
@@ -163,9 +164,12 @@ class ScreenCapture:
                               cv2.WINDOW_FULLSCREEN)
         
         cv2.imshow('Teaching model screen', white_image)
+
         if cv2.waitKey(1) & 0xFF == ord('q'):
+            
             cv2.destroyAllWindows()
             logging.info('Quitting from open_screen function.')
+            exit_func()
             return False
         
         return True
@@ -183,15 +187,31 @@ class ScreenCapture:
         return screen_width, screen_height
 
 
+Exit_flag = False
+def exit_func():
+    global Exit_flag
+    Exit_flag = True
+    logging.info("Exiting exit_func")
+    exit()
+
+
+
 if __name__ == '__main__':
     screen_capture = ScreenCapture()
-
+    Image_show = Work_with_cv2.Image()
+    
     listener = keyboard.Listener(on_press=lambda key:
                                  screen_capture.when_key_pressed(key))
     listener.start()
 
     while True:
-        status = Get_image.show()
+        if Exit_flag:
+            listener.stop()
+            Image_show.end_showing()
+            cv2.destroyAllWindows()
+            break
+
+        status = Image_show.show()
         if not status:
             break
 
