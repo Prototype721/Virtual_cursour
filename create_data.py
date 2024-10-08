@@ -99,10 +99,10 @@ class ScreenCapture:
             return False
 
 
-    def change_circle_coordinates(self):
+    def change_circle_coordinates(self, Cls):
         (status,
         self.current_x_coordinate, 
-        self.current_y_coordinate) = White_screen.update_circle_coordinates()
+        self.current_y_coordinate) = Cls.update_circle_coordinates()
 
         if not status:
             logging.warning("Can't change coordenates for circle in \
@@ -138,7 +138,7 @@ class ScreenCapture:
                     if not status:
                         logging.warning('Ошибка при загрузке данных')
                         return True
-                    status = self.change_circle_coordinates()
+                    status = self.change_circle_coordinates(Cls)
                     if not status:
                         logging.warning('Ошибка при создании новых координат')
                         
