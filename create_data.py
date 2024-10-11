@@ -69,8 +69,8 @@ class ScreenCapture:
             
 
             extra_data = [
-                self.current_x_coordinate,
-                self.current_y_coordinate,
+                self.current_x_coordinate-50,
+                (-self.current_y_coordinate+50),
                 self.width * self.current_x_coordinate // 100,
                 self.height * self.current_y_coordinate // 100,
                 self.width,
