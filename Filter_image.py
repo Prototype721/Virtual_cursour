@@ -32,8 +32,8 @@ def filter_image(img):
             conf = math.ceil((box.conf[0] * 100)) / 100 # confidence
 
             if conf > 0.3 and (abs(x1-x2)*abs(y1-y2)) > MIN_AREA:
-                from_center_x = abs(x1 + x2 - size_of_x)/2
-                from_center_y = abs(y1+y2-size_of_y)/2
+                from_center_x = (x1 + x2 - size_of_x)/2
+                from_center_y = (-1)*(y1+y2-size_of_y)/2
                 from_center = round((from_center_x**2 + from_center_y**2)**0.5)
                 objects.append([from_center,from_center_x,from_center_y, x1, y1, x2, y2])
     
